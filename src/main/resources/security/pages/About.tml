@@ -1,0 +1,7 @@
+<html t:type="layout" title="About plannow-security"
+      xmlns:t="http://tapestry.apache.org/schema/tapestry_5_3.xsd"
+      xmlns:p="tapestry:parameter">
+
+    <p>About plannow-security application ...</p>
+
+</html>
