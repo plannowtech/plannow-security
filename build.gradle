@@ -5,8 +5,8 @@ apply plugin: "java"
 apply plugin: "jetty"
 apply plugin: "eclipse"
 
-sourceCompatibility = "1.6"
-targetCompatibility = "1.6"
+sourceCompatibility = "1.5"
+targetCompatibility = "1.5"
 
 group = "com.plannow"
 version = "1.0-SNAPSHOT"
@@ -55,6 +55,12 @@ dependencies {
     // compile "org.apache.tapestry:tapestry-upload:5.3.1"
 
     provided "javax.servlet:servlet-api:2.5"
+    
+    compile group:"org.apache.tapestry", name :"tapestry-hibernate", version:"5.3.1"
+    compile "org.apache.commons:commons-email:1.2"
+    compile group:"org.tynamo", name :"tapestry-security", version:"0.4.0"
+    compile group:"org.apache.shiro", name :"shiro-web", version:"1.2.0"
+	compile group:"org.apache.shiro", name :"shiro-core", version:"1.2.0"
 }
 
 test {
