@@ -5,8 +5,8 @@ apply plugin: "java"
 apply plugin: "jetty"
 apply plugin: "eclipse"
 
-sourceCompatibility = "1.5"
-targetCompatibility = "1.5"
+sourceCompatibility = "1.6"
+targetCompatibility = "1.6"
 
 group = "com.plannow"
 version = "1.0-SNAPSHOT"
@@ -61,6 +61,7 @@ dependencies {
     compile group:"org.tynamo", name :"tapestry-security", version:"0.4.0"
     compile group:"org.apache.shiro", name :"shiro-web", version:"1.2.0"
 	compile group:"org.apache.shiro", name :"shiro-core", version:"1.2.0"
+	compile "com.oracle:ojdbc14:10.2.0.2.0"
 }
 
 test {
