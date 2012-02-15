@@ -4,6 +4,7 @@ apply plugin: "war"
 apply plugin: "java"
 apply plugin: "jetty"
 apply plugin: "eclipse"
+apply plugin: "maven"
 
 sourceCompatibility = "1.6"
 targetCompatibility = "1.6"
@@ -13,18 +14,6 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
-
-    // All things JBoss/Javassist/Hibernate
-    mavenRepo urls: "http://repository.jboss.org/nexus/content/groups/public/"
-
-    // For stable versions of the tapx libraries
-    mavenRepo urls: "http://howardlewisship.com/repository/"
-
-    // For non-stable versions of the tapx libraries
-    mavenRepo urls: "http://howardlewisship.com/snapshot-repository/"
-
-    // For access to Apache Staging (Preview) packages
-    mavenRepo urls: "https://repository.apache.org/content/groups/staging"
 }
 
 // This simulates Maven's "provided" scope, until it is officially supported by Gradle
@@ -56,12 +45,11 @@ dependencies {
 
     provided "javax.servlet:servlet-api:2.5"
     
-    compile group:"org.apache.tapestry", name :"tapestry-hibernate", version:"5.3.1"
+    compile group:"org.apache.tapestry", name :"tapestry-hibernate", version:"5.3.2"
     compile "org.apache.commons:commons-email:1.2"
-    compile group:"org.tynamo", name :"tapestry-security", version:"0.4.0"
+    compile group:"org.tynamo", name :"tapestry-security", version:"0.4.2"
     compile group:"org.apache.shiro", name :"shiro-web", version:"1.2.0"
 	compile group:"org.apache.shiro", name :"shiro-core", version:"1.2.0"
-	compile "com.oracle:ojdbc14:10.2.0.2.0"
 }
 
 test {
