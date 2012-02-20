@@ -8,6 +8,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import javax.persistence.FlushModeType;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.IncorrectCredentialsException;
@@ -20,6 +22,7 @@ import org.apache.tapestry5.hibernate.HibernateGridDataSource;
 import org.apache.tapestry5.hibernate.HibernateSessionManager;
 import org.apache.tapestry5.ioc.annotations.Inject;
 import org.apache.tapestry5.services.ApplicationStateManager;
+import org.hibernate.FlushMode;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.criterion.Projection;
@@ -81,10 +84,11 @@ public class UserServiceImpl implements UserService
 	}
 
 	@Override
-	public boolean userExistWithThatMail(String email)
+	public boolean userExistWithThatMail(String email, User2 user)
 	{
 		return (Long) session.createCriteria(User2.class).add(Restrictions.eq("email", email))
-				.setProjection(Projections.rowCount()).uniqueResult() > 0;
+				.add(Restrictions.ne("id", user.getId())).setProjection(Projections.rowCount())
+				.uniqueResult() > 0;
 	}
 
 	public boolean authenticate(String username, String password)

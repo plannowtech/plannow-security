@@ -49,7 +49,6 @@ public class UserAuthorizingRealm extends AuthorizingRealm
 			return null;
 
 		String username = (String) principals.fromRealm(getName()).iterator().next();
-		System.err.println("username: " + username);
 		if (username == null)
 			return null;
 

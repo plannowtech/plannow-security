@@ -1,9 +1,11 @@
 <t:container
 	xmlns:t="http://tapestry.apache.org/schema/tapestry_5_3.xsd"
 	xmlns:p="tapestry:parameter">
-		<t:form t:id="rolesForm" context="user" zone="^">
-			<t:checkList t:id="roles" model="allRoles"
-				selected="checkedListSelectedRolesValues" encoder="rolesEncoder" />
-			<t:submit value="save" />
-		</t:form>
+	<t:form t:id="rolesForm" context="user" zone="^">
+		<t:checkList t:id="roles" model="allRoles"
+			selected="checkedListSelectedRolesValues" encoder="rolesEncoder" />
+		<div class="bottom">
+			<t:submit value="message:save" />
+		</div>
+	</t:form>
 </t:container>

@@ -119,5 +119,5 @@ public interface UserService
 	
 	Set<String> findRolesForUser(String username);
 
-	boolean userExistWithThatMail(String email);
+	boolean userExistWithThatMail(String email, User2 user);
 }
