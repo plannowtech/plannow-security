@@ -8,8 +8,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
-import javax.persistence.FlushModeType;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.IncorrectCredentialsException;
@@ -22,17 +20,16 @@ import org.apache.tapestry5.hibernate.HibernateGridDataSource;
 import org.apache.tapestry5.hibernate.HibernateSessionManager;
 import org.apache.tapestry5.ioc.annotations.Inject;
 import org.apache.tapestry5.services.ApplicationStateManager;
-import org.hibernate.FlushMode;
+import org.hibernate.Criteria;
 import org.hibernate.Session;
-import org.hibernate.Transaction;
-import org.hibernate.criterion.Projection;
 import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
 import org.tynamo.security.services.SecurityService;
 
-import com.plannow.security.entities.BaseEntityImpl;
 import com.plannow.security.entities.Role;
+import com.plannow.security.entities.RolePermission;
 import com.plannow.security.entities.User2;
+import com.plannow.security.entities.UserPermission;
 import com.plannow.security.entities.UserRole;
 import com.plannow.security.model.sessionstate.UserInfo;
 import com.plannow.security.services.MailService;
@@ -568,4 +565,26 @@ public class UserServiceImpl implements UserService
 		return rolesForUser;
 	}
 
+	@SuppressWarnings("unchecked")
+	@Override
+	public Set<String> findAllPermissionsForUser(String username)
+	{
+		Set<String> rolesForUser = findRolesForUser(username);
+
+		Set<String> permissionsForUser = CollectionFactory.newSet();
+
+		Criteria crit = session.createCriteria(RolePermission.class).createAlias("role", "r")
+				.add(Restrictions.in("r.name", rolesForUser)).createAlias("permission", "p")
+				.setProjection(Projections.distinct(Projections.property("p.name")));
+
+		permissionsForUser.addAll(crit.list());
+
+		Criteria crit2 = session.createCriteria(UserPermission.class).createAlias("user", "u")
+				.add(Restrictions.eq("u.email", username)).createAlias("permission", "p")
+				.setProjection(Projections.distinct(Projections.property("p.name")));
+
+		System.out.println(crit.list());
+		permissionsForUser.addAll(crit2.list());
+		return permissionsForUser;
+	}
 }

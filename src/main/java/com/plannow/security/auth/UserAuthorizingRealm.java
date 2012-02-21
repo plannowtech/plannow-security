@@ -37,7 +37,6 @@ public class UserAuthorizingRealm extends AuthorizingRealm
 	@Override
 	protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals)
 	{
-
 		if (principals == null)
 			throw new AuthorizationException(
 					"PrincipalCollection was null, which should not happen");
@@ -52,12 +51,13 @@ public class UserAuthorizingRealm extends AuthorizingRealm
 		if (username == null)
 			return null;
 
-//		if (!userService.userExists(username))
-//			return null;
-
 		Set<String> roles = userService.findRolesForUser(username);
+		SimpleAuthorizationInfo simpleAuthorizationInfo = new SimpleAuthorizationInfo(roles);
 
-		return new SimpleAuthorizationInfo(roles);
+		Set<String> permissions = userService.findAllPermissionsForUser(username);
+		simpleAuthorizationInfo.setStringPermissions(permissions);
+
+		return simpleAuthorizationInfo;
 	}
 
 	@Override
@@ -66,7 +66,6 @@ public class UserAuthorizingRealm extends AuthorizingRealm
 	{
 		UsernamePasswordToken upToken = (UsernamePasswordToken) token;
 		String username = upToken.getUsername();
-		char[] password = upToken.getPassword();
 		// Null username is invalid
 		if (username == null)
 			throw new AccountException("Null usernames are not allowed by this realm.");

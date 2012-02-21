@@ -54,7 +54,7 @@ public interface UserService
 	User2 findUserByEmail(String email);
 
 	User2 findUserByUsername(String username);
-	
+
 	String generatePassword();
 
 	@CommitAfter
@@ -116,8 +116,16 @@ public interface UserService
 
 	boolean tynamoAuthenticate(String username, String password) throws UnknownAccountException,
 			IncorrectCredentialsException, LockedAccountException, AuthenticationException;
-	
+
 	Set<String> findRolesForUser(String username);
+
+	/**
+	 * Includes permissions acquired via roles
+	 * 
+	 * @param username
+	 * @return all permissions for the user
+	 */
+	Set<String> findAllPermissionsForUser(String username);
 
 	boolean userExistWithThatMail(String email, User2 user);
 }
