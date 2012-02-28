@@ -42,6 +42,7 @@ public class UserServiceImpl implements UserService
 	@Inject
 	private ApplicationStateManager asm;
 
+	@SuppressWarnings("unused")
 	@Inject
 	private MailService mailService;
 
@@ -52,6 +53,7 @@ public class UserServiceImpl implements UserService
 	private static final int GENERATED_PASSWORD_LENGTH = 8;
 	private static final int GENERATED_SALT_LENGTH = 8;
 
+	@SuppressWarnings("unused")
 	private UserInfo getUserInfo()
 	{
 		// in case this method is called before the servlet container has built the session
@@ -74,13 +76,6 @@ public class UserServiceImpl implements UserService
 	}
 
 	@Override
-	public boolean userExists(String email)
-	{
-		return session.createCriteria(User2.class).add(Restrictions.eq("email", email))
-				.uniqueResult() != null;
-	}
-
-	@Override
 	public boolean userExistWithThatMail(String email, User2 user)
 	{
 		return (Long) session.createCriteria(User2.class).add(Restrictions.eq("email", email))
@@ -88,13 +83,13 @@ public class UserServiceImpl implements UserService
 				.uniqueResult() > 0;
 	}
 
-	public boolean authenticate(String username, String password)
+	public boolean authenticate(String email, String password)
 	{
-		if (username == null || username.trim().length() == 0)
+		if (email == null || email.trim().length() == 0)
 			return false;
 
 		User2 user = (User2) session.createCriteria(User2.class)
-				.add(Restrictions.eq("email", username)).uniqueResult();
+				.add(Restrictions.eq("email", email)).uniqueResult();
 
 		if (user == null)
 			return false;
@@ -186,42 +181,42 @@ public class UserServiceImpl implements UserService
 		return input;
 	}
 
-	public boolean checkPassword(String username, String password)
-	{
-		User2 user = (User2) session.createCriteria(User2.class)
-				.add(Restrictions.eq("email", username)).uniqueResult();
-
-		if (user == null)
-			return false;
-
-		if (!user.isActive())
-			return false;
-
-		String passwordHash = user.getPasswordHash();
-		String salt = String.valueOf(user.getPasswordSalt());
-
-		try
-		{ // Use Base 64 encoding
-			byte[] bDigest = base64ToByte(passwordHash);
-			byte[] bSalt = base64ToByte(salt);
-
-			// Compute the new DIGEST
-
-			byte[] proposedDigest = getHash(ITERATION_NUMBER, password, bSalt);
-
-			if (!Arrays.equals(proposedDigest, bDigest))
-			{
-				return false;
-			}
-
-			return true;
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-			return false;
-		}
-	}
+//	public boolean checkPassword(String username, String password)
+//	{
+//		User2 user = (User2) session.createCriteria(User2.class)
+//				.add(Restrictions.eq("email", username)).uniqueResult();
+//
+//		if (user == null)
+//			return false;
+//
+//		if (!user.isActive())
+//			return false;
+//
+//		String passwordHash = user.getPasswordHash();
+//		String salt = String.valueOf(user.getPasswordSalt());
+//
+//		try
+//		{ // Use Base 64 encoding
+//			byte[] bDigest = base64ToByte(passwordHash);
+//			byte[] bSalt = base64ToByte(salt);
+//
+//			// Compute the new DIGEST
+//
+//			byte[] proposedDigest = getHash(ITERATION_NUMBER, password, bSalt);
+//
+//			if (!Arrays.equals(proposedDigest, bDigest))
+//			{
+//				return false;
+//			}
+//
+//			return true;
+//		}
+//		catch (Exception e)
+//		{
+//			e.printStackTrace();
+//			return false;
+//		}
+//	}
 
 	public boolean emailExists(String email)
 	{

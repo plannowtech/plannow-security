@@ -1,0 +1,11 @@
+<t:container
+	xmlns:t="http://tapestry.apache.org/schema/tapestry_5_3.xsd"
+	xmlns:p="tapestry:parameter">
+	<t:form t:id="permissionsForm" context="user" zone="prop:zone.clientId">
+		<t:checkList t:id="permissions" model="allPermissions"
+			selected="checkedListSelectedPermissionValues" encoder="permissionEncoder" />
+		<div class="bottom">
+			<t:submit value="message:save" />
+		</div>
+	</t:form>
+</t:container>

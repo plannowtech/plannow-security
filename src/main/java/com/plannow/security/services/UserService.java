@@ -17,11 +17,18 @@ import com.plannow.security.entities.UserRole;
 
 public interface UserService
 {
-	boolean userExists(String email);
+	/**
+	 * Return true and successfully logged in if there is an user in database and his email and password match 
+	 * with parameters email and password and user is active. Otherwise return false.
+	 * 
+	 * @param email
+	 * @param password
+	 * 
+	 * */
+	boolean authenticate(String email, String password);
 
-	boolean authenticate(String username, String password);
-
-	boolean checkPassword(String username, String password);
+	
+//	boolean checkPassword(String username, String password);
 
 	boolean emailExists(String email);
 
