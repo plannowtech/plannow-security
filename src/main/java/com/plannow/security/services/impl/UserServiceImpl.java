@@ -3,12 +3,13 @@ package com.plannow.security.services.impl;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.IncorrectCredentialsException;
 import org.apache.shiro.authc.LockedAccountException;
@@ -26,13 +27,13 @@ import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
 import org.tynamo.security.services.SecurityService;
 
+import com.plannow.security.entities.Permission;
 import com.plannow.security.entities.Role;
 import com.plannow.security.entities.RolePermission;
 import com.plannow.security.entities.User2;
 import com.plannow.security.entities.UserPermission;
 import com.plannow.security.entities.UserRole;
 import com.plannow.security.model.sessionstate.UserInfo;
-import com.plannow.security.services.MailService;
 import com.plannow.security.services.UserService;
 import com.plannow.security.utils.CollectionFactory;
 import com.plannow.security.utils.Defense;
@@ -43,35 +44,11 @@ public class UserServiceImpl implements UserService
 	private ApplicationStateManager asm;
 
 	@Inject
-	private MailService mailService;
-
-	@Inject
 	private Session session;
 
 	private static final int ITERATION_NUMBER = 1000;
 	private static final int GENERATED_PASSWORD_LENGTH = 8;
 	private static final int GENERATED_SALT_LENGTH = 8;
-
-	private UserInfo getUserInfo()
-	{
-		// in case this method is called before the servlet container has built the session
-		if (asm == null)
-			return null;
-
-		// TODO Bojan
-		// there is exception at start of app when saveSetting has been called
-		try
-		{
-			if (!asm.exists(UserInfo.class))
-				return null;
-		}
-		catch (Exception e)
-		{
-			return null;
-		}
-
-		return asm.get(UserInfo.class);
-	}
 
 	@Override
 	public boolean userExists(String email)
@@ -184,43 +161,6 @@ public class UserServiceImpl implements UserService
 		}
 
 		return input;
-	}
-
-	public boolean checkPassword(String username, String password)
-	{
-		User2 user = (User2) session.createCriteria(User2.class)
-				.add(Restrictions.eq("email", username)).uniqueResult();
-
-		if (user == null)
-			return false;
-
-		if (!user.isActive())
-			return false;
-
-		String passwordHash = user.getPasswordHash();
-		String salt = String.valueOf(user.getPasswordSalt());
-
-		try
-		{ // Use Base 64 encoding
-			byte[] bDigest = base64ToByte(passwordHash);
-			byte[] bSalt = base64ToByte(salt);
-
-			// Compute the new DIGEST
-
-			byte[] proposedDigest = getHash(ITERATION_NUMBER, password, bSalt);
-
-			if (!Arrays.equals(proposedDigest, bDigest))
-			{
-				return false;
-			}
-
-			return true;
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-			return false;
-		}
 	}
 
 	public boolean emailExists(String email)
@@ -418,27 +358,6 @@ public class UserServiceImpl implements UserService
 		return randomStr;
 	}
 
-	private static String getPasswordHash(String salt, String password)
-	{
-		try
-		{
-			byte[] hashedPassword = getHash(ITERATION_NUMBER, password, base64ToByte(salt));
-
-			return byteToBase64(hashedPassword);
-
-		}
-		catch (NoSuchAlgorithmException e)
-		{
-			e.printStackTrace();
-		}
-		catch (UnsupportedEncodingException e)
-		{
-			e.printStackTrace();
-		}
-
-		return null;
-	}
-
 	public static String byteToBase64(byte[] data)
 	{
 		return new String(new Base64().encode(data));
@@ -586,5 +505,45 @@ public class UserServiceImpl implements UserService
 		System.out.println(crit.list());
 		permissionsForUser.addAll(crit2.list());
 		return permissionsForUser;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public Collection<String> findAllPermissions()
+	{
+		return session.createCriteria(Permission.class)
+				.setProjection(Projections.distinct(Projections.property("name"))).list();
+	}
+
+	@Override
+	public Permission findPermissionByName(String permission)
+	{
+
+		return (Permission) session.createCriteria(Permission.class)
+				.add(Restrictions.eq("name", permission)).uniqueResult();
+	}
+
+	@Override
+	public Collection<String> findNonRolePermissionsForUser(String username)
+	{
+		Set<String> rolesForUser = findRolesForUser(username);
+		Set<String> permissionsForUser = CollectionFactory.newSet();
+
+		Criteria crit = session.createCriteria(RolePermission.class).createAlias("role", "r")
+				.add(Restrictions.in("r.name", rolesForUser)).createAlias("permission", "p")
+				.setProjection(Projections.distinct(Projections.property("p.name")));
+
+		permissionsForUser.addAll(crit.list());
+		return CollectionUtils.subtract(findAllPermissions(), permissionsForUser);
+	}
+
+	@Override
+	public boolean checkPassword(User2 user, String password)
+	{
+		String passwordHash = user.getPasswordHash();
+
+		String newhash = new Sha1Hash(password, user.getPasswordSalt()).toString();
+
+		return newhash.equals(passwordHash);
 	}
 }

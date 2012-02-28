@@ -1,5 +1,6 @@
 package com.plannow.security.services;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -11,6 +12,7 @@ import org.apache.shiro.authc.UnknownAccountException;
 import org.apache.tapestry5.hibernate.HibernateGridDataSource;
 import org.apache.tapestry5.hibernate.annotations.CommitAfter;
 
+import com.plannow.security.entities.Permission;
 import com.plannow.security.entities.Role;
 import com.plannow.security.entities.User2;
 import com.plannow.security.entities.UserRole;
@@ -21,7 +23,14 @@ public interface UserService
 
 	boolean authenticate(String username, String password);
 
-	boolean checkPassword(String username, String password);
+	/**
+	 * Check if this is the user's password (unhashed)
+	 * 
+	 * @param user
+	 * @param password
+	 * @return
+	 */
+	boolean checkPassword(User2 user, String password);
 
 	boolean emailExists(String email);
 
@@ -127,5 +136,11 @@ public interface UserService
 	 */
 	Set<String> findAllPermissionsForUser(String username);
 
+	Collection<String> findNonRolePermissionsForUser(String username);
+
 	boolean userExistWithThatMail(String email, User2 user);
+
+	Collection<String> findAllPermissions();
+
+	Permission findPermissionByName(String permission);
 }

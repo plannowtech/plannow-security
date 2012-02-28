@@ -11,7 +11,6 @@ import org.apache.tapestry5.ioc.annotations.Symbol;
 import com.plannow.security.model.PlannowSecuritySymbols;
 import com.plannow.security.services.MailService;
 
-
 public class MailServiceImpl implements MailService
 {
 	private static final String MAIL_CONTENT_CHARSET = "UTF-8";
@@ -70,7 +69,6 @@ public class MailServiceImpl implements MailService
 	@Override
 	public boolean sendHtmlMailTo(String address, String subject, String message)
 	{
-
 		HtmlEmail email = new HtmlEmail();
 		email.setHostName(mailHost);
 		email.setSmtpPort(mailPort);
