@@ -91,7 +91,6 @@ public class User2 extends BaseEntityImpl
 		this.active = active;
 	}
 
-	@Lob
 	@Column(name = "password_salt")
 	public byte[] getPasswordSalt()
 	{

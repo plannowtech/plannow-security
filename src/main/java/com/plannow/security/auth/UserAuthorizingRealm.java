@@ -65,14 +65,14 @@ public class UserAuthorizingRealm extends AuthorizingRealm
 			throws AuthenticationException
 	{
 		UsernamePasswordToken upToken = (UsernamePasswordToken) token;
-		String username = upToken.getUsername();
+		String email = upToken.getUsername();
 		// Null username is invalid
-		if (username == null)
+		if (email == null)
 			throw new AccountException("Null usernames are not allowed by this realm.");
-		User2 user = userService.findUserByUsername(username);
+		User2 user = userService.findUserByUsername(email);
 		if (user == null)
 			return null;
-		return new SimpleAuthenticationInfo(username, user.getPasswordHash(), new SimpleByteSource(
+		return new SimpleAuthenticationInfo(email, user.getPasswordHash(), new SimpleByteSource(
 				user.getPasswordSalt()), getName());
 	}
 }

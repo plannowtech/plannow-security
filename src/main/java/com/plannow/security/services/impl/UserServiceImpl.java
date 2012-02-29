@@ -1,14 +1,11 @@
 package com.plannow.security.services.impl;
 
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.Date;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.IncorrectCredentialsException;
 import org.apache.shiro.authc.LockedAccountException;
@@ -16,7 +13,6 @@ import org.apache.shiro.authc.UnknownAccountException;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.crypto.hash.Sha1Hash;
 import org.apache.shiro.subject.Subject;
-import org.apache.tapestry5.hibernate.HibernateGridDataSource;
 import org.apache.tapestry5.hibernate.HibernateSessionManager;
 import org.apache.tapestry5.ioc.annotations.Inject;
 import org.apache.tapestry5.services.ApplicationStateManager;
@@ -26,62 +22,34 @@ import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
 import org.tynamo.security.services.SecurityService;
 
+import com.plannow.security.entities.Permission;
 import com.plannow.security.entities.Role;
 import com.plannow.security.entities.RolePermission;
 import com.plannow.security.entities.User2;
 import com.plannow.security.entities.UserPermission;
 import com.plannow.security.entities.UserRole;
 import com.plannow.security.model.sessionstate.UserInfo;
-import com.plannow.security.services.MailService;
 import com.plannow.security.services.UserService;
 import com.plannow.security.utils.CollectionFactory;
-import com.plannow.security.utils.Defense;
 
 public class UserServiceImpl implements UserService
 {
 	@Inject
 	private ApplicationStateManager asm;
 
-	@SuppressWarnings("unused")
-	@Inject
-	private MailService mailService;
-
 	@Inject
 	private Session session;
 
+	@Inject
+	private HibernateSessionManager hibernateSessionManager;
+
+	@Inject
+	private SecurityService securityService;
+
+	@SuppressWarnings("unused")
 	private static final int ITERATION_NUMBER = 1000;
 	private static final int GENERATED_PASSWORD_LENGTH = 8;
 	private static final int GENERATED_SALT_LENGTH = 8;
-
-	@SuppressWarnings("unused")
-	private UserInfo getUserInfo()
-	{
-		// in case this method is called before the servlet container has built the session
-		if (asm == null)
-			return null;
-
-		// TODO Bojan
-		// there is exception at start of app when saveSetting has been called
-		try
-		{
-			if (!asm.exists(UserInfo.class))
-				return null;
-		}
-		catch (Exception e)
-		{
-			return null;
-		}
-
-		return asm.get(UserInfo.class);
-	}
-
-	@Override
-	public boolean userExistWithThatMail(String email, User2 user)
-	{
-		return (Long) session.createCriteria(User2.class).add(Restrictions.eq("email", email))
-				.add(Restrictions.ne("id", user.getId())).setProjection(Projections.rowCount())
-				.uniqueResult() > 0;
-	}
 
 	public boolean authenticate(String email, String password)
 	{
@@ -112,152 +80,15 @@ public class UserServiceImpl implements UserService
 		return true;
 	}
 
-	@Inject
-	private SecurityService securityService;
-
-	@Override
-	public boolean tynamoAuthenticate(String username, String password)
-			throws UnknownAccountException, IncorrectCredentialsException, LockedAccountException,
-			AuthenticationException
-	{
-		Subject currentUser = securityService.getSubject();
-		UsernamePasswordToken token = new UsernamePasswordToken(username, password);
-		try
-		{
-			currentUser.login(token);
-		}
-		catch (UnknownAccountException e)
-		{
-			throw e;
-		}
-		catch (IncorrectCredentialsException e)
-		{
-			throw e;
-		}
-		catch (LockedAccountException e)
-		{
-			throw e;
-		}
-		catch (AuthenticationException e)
-		{
-			throw e;
-		}
-
-		return authenticate(username, password);
-	}
-
 	void login(User2 user)
 	{
 		asm.set(UserInfo.class, new UserInfo(user.getId()));
 	}
 
-	/**
-	 * From a password, a number of iterations and a salt, returns the corresponding digest
-	 * 
-	 * @param iterationNb
-	 *            The number of iterations of the algorithm
-	 * @param password
-	 *            The password to encrypt
-	 * @param salt
-	 *            The salt
-	 * @return The digested password
-	 * @throws NoSuchAlgorithmException
-	 *             If the algorithm doesn't exist
-	 * @throws UnsupportedEncodingException
-	 */
-	public static byte[] getHash(int iterationNb, String password, byte[] salt)
-			throws NoSuchAlgorithmException, UnsupportedEncodingException
-	{
-		MessageDigest digest = MessageDigest.getInstance("SHA-1");
-		digest.reset();
-		digest.update(salt);
-		byte[] input = digest.digest(password.getBytes("UTF-8"));
-		for (int i = 0; i < iterationNb; i++)
-		{
-			digest.reset();
-			input = digest.digest(input);
-		}
-
-		return input;
-	}
-
-//	public boolean checkPassword(String username, String password)
-//	{
-//		User2 user = (User2) session.createCriteria(User2.class)
-//				.add(Restrictions.eq("email", username)).uniqueResult();
-//
-//		if (user == null)
-//			return false;
-//
-//		if (!user.isActive())
-//			return false;
-//
-//		String passwordHash = user.getPasswordHash();
-//		String salt = String.valueOf(user.getPasswordSalt());
-//
-//		try
-//		{ // Use Base 64 encoding
-//			byte[] bDigest = base64ToByte(passwordHash);
-//			byte[] bSalt = base64ToByte(salt);
-//
-//			// Compute the new DIGEST
-//
-//			byte[] proposedDigest = getHash(ITERATION_NUMBER, password, bSalt);
-//
-//			if (!Arrays.equals(proposedDigest, bDigest))
-//			{
-//				return false;
-//			}
-//
-//			return true;
-//		}
-//		catch (Exception e)
-//		{
-//			e.printStackTrace();
-//			return false;
-//		}
-//	}
-
 	public boolean emailExists(String email)
 	{
 		return session.createCriteria(User2.class).add(Restrictions.eq("email", email))
 				.uniqueResult() != null;
-	}
-
-	public boolean isEmailUnique(String email, User2 user)
-	{
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	public boolean isUsernameUnique(String username, User2 user)
-	{
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	public void changeEmail(User2 user, String newMail)
-	{
-		// TODO Auto-generated method stub
-
-	}
-
-	public boolean isUserImpersonated()
-	{
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	public boolean validateAccount(User2 user, String validationCode)
-	{
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	public void changeIsValidEMail(User2 user, Boolean b)
-	{
-		// TODO Auto-generated method stub
-
 	}
 
 	public void logout()
@@ -275,129 +106,42 @@ public class UserServiceImpl implements UserService
 				.add(Restrictions.eq("id", userInfo.getUserId())).uniqueResult();
 	}
 
-	public User2 findUser(String username)
-	{
-		return (User2) session.createCriteria(User2.class)
-				.add(Restrictions.eq("username", username)).uniqueResult();
-	}
-
 	public User2 findUserByEmail(String email)
 	{
 		return (User2) session.createCriteria(User2.class).add(Restrictions.eq("email", email))
 				.uniqueResult();
 	}
 
-	public User2 createNewUser(String email, String password, Class<?> page)
+	@Override
+	public User2 findUserByUsername(String email)
 	{
-		Defense.notNull(email, "email");
-
-		if (emailExists(email))
-			return null;
-
-		User2 user = new User2();
-		user.setEmail(email);
-
-		user.setPasswordSalt(generateSalt().getBytes());
-
-		// save it's hash value
-		user.setPassword(password);
-
-		session.save(user);
-		return user;
+		
+		System.err.println(session.createCriteria(User2.class).list());
+		return (User2) session.createCriteria(User2.class).add(Restrictions.eq("email", email))
+				.uniqueResult();
 	}
 
-	public User2 createNewUser(String email, Class<?> page)
-	{
-		Defense.notNull(email, "email");
-
-		if (emailExists(email))
-			return null;
-
-		User2 user = new User2();
-		user.setEmail(email);
-
-		user.setPasswordSalt(generateSalt().getBytes());
-
-		// save it's hash value
-		String password = generatePassword();
-		user.setPassword(password);
-
-		return user;
-	}
-
-	public User2 createEditUserPhone(Long entityId, Long roleId, String phone)
-	{
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public void generateNewPassword(long userId)
-	{
-		// TODO Auto-generated method stub
-
-	}
-
-	public void editUser(long userId, String email, String phone, String username, String password,
-			Boolean valid)
-	{
-		// TODO Auto-generated method stub
-
-	}
-
-	public void editUser(User2 user, String password, Boolean valid)
-	{
-		Defense.notNull(user, "user");
-		Defense.notNull(password, "password");
-
-		user.setPasswordSalt(generateSalt().getBytes());
-		user.setPassword(password);
-
-		if (valid != null)
-			user.setActive(valid);
-
-		session.save(user);
-	}
-
-	public void deleteUser(Long userId)
-	{
-		// TODO Auto-generated method stub
-
-	}
-
-	public void impersonate(User2 user)
-	{
-		// TODO Auto-generated method stub
-
-	}
-
-	public Long getNumberOfSessionsForUser(User2 user)
-	{
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public HibernateGridDataSource getUserSessionsGridDataSource(Date dateFrom, Date dateTo)
-	{
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public User2 findUser(Long entityId)
-	{
-		// TODO Auto-generated method stub
-		return null;
-	}
-
+	@Override
 	public String generatePassword()
 	{
 		return randomString(GENERATED_PASSWORD_LENGTH);
 	}
 
-	private String generateSalt()
-	{
-		return randomString(GENERATED_SALT_LENGTH);
-	}
+	@Override
+    public boolean checkPassword(User2 user, String password)
+    {
+            String passwordHash = user.getPasswordHash();
 
+            String newhash = new Sha1Hash(password, user.getPasswordSalt()).toString();
+
+            return newhash.equals(passwordHash);
+    }
+
+	/**
+	 * Return random generated {@link String String}, 8 characters length by default.
+	 * 
+	 * @param length
+	 */
 	private String randomString(int length)
 	{
 		char[] chars =
@@ -413,45 +157,6 @@ public class UserServiceImpl implements UserService
 		return randomStr;
 	}
 
-	private static String getPasswordHash(String salt, String password)
-	{
-		try
-		{
-			byte[] hashedPassword = getHash(ITERATION_NUMBER, password, base64ToByte(salt));
-
-			return byteToBase64(hashedPassword);
-
-		}
-		catch (NoSuchAlgorithmException e)
-		{
-			e.printStackTrace();
-		}
-		catch (UnsupportedEncodingException e)
-		{
-			e.printStackTrace();
-		}
-
-		return null;
-	}
-
-	public static String byteToBase64(byte[] data)
-	{
-		return new String(new Base64().encode(data));
-	}
-
-	public static byte[] base64ToByte(String data)
-	{
-		return new Base64().decode(data.getBytes());
-	}
-
-	@Override
-	public User2 createNewUser(Long entityId, List<Long> roleIds, String username, String email,
-			String phone, boolean active, boolean valid)
-	{
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 	@Override
 	public User2 createNewUser(String username, String password, String email)
 	{
@@ -464,31 +169,6 @@ public class UserServiceImpl implements UserService
 		user.setActive(true);
 		session.save(user);
 		return user;
-	}
-
-	@Override
-	public void generateNewPassword(User2 user)
-	{
-		// generate password,
-		String password = generatePassword();
-		// save it's hash value
-		user.setPassword(password);
-
-		session.save(user);
-
-	}
-
-	@Override
-	public void resetPassword(User2 user, String newPassword)
-	{
-		Defense.notNull(user, "user");
-
-		Defense.notNull(newPassword, "new password");
-
-		// save it's hash value
-		user.setPassword(newPassword);
-
-		session.save(user);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -519,15 +199,6 @@ public class UserServiceImpl implements UserService
 				.uniqueResult();
 	}
 
-	@Inject
-	private HibernateSessionManager hibernateSessionManager;
-
-	public UserRole findUserRoleByUserAndRole(User2 user, Role role)
-	{
-		return (UserRole) session.createCriteria(UserRole.class).add(Restrictions.eq("user", user))
-				.add(Restrictions.eq("role", role)).uniqueResult();
-	}
-
 	@Override
 	public void saveOrUpdate(Object obj)
 	{
@@ -542,29 +213,59 @@ public class UserServiceImpl implements UserService
 		hibernateSessionManager.commit();
 	}
 
-	@Override
-	public User2 findUserByUsername(String username)
+	public UserRole findUserRoleByUserAndRole(User2 user, Role role)
 	{
-		return (User2) session.createCriteria(User2.class).add(Restrictions.eq("email", username))
-				.uniqueResult();
+		return (UserRole) session.createCriteria(UserRole.class).add(Restrictions.eq("user", user))
+				.add(Restrictions.eq("role", role)).uniqueResult();
+	}
+
+	@Override
+	public boolean tynamoAuthenticate(String email, String password)
+			throws UnknownAccountException, IncorrectCredentialsException, LockedAccountException,
+			AuthenticationException
+	{
+		Subject currentUser = securityService.getSubject();
+		UsernamePasswordToken token = new UsernamePasswordToken(email, password);
+		try
+		{
+			currentUser.login(token);
+		}
+		catch (UnknownAccountException e)
+		{
+			throw e;
+		}
+		catch (IncorrectCredentialsException e)
+		{
+			throw e;
+		}
+		catch (LockedAccountException e)
+		{
+			throw e;
+		}
+		catch (AuthenticationException e)
+		{
+			throw e;
+		}
+
+		return authenticate(email, password);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public Set<String> findRolesForUser(String username)
+	public Set<String> findRolesForUser(String email)
 	{
 		Set<String> rolesForUser = CollectionFactory.newSet();
 		rolesForUser.addAll(session.createCriteria(UserRole.class).createAlias("user", "user")
-				.add(Restrictions.eq("user.email", username)).createAlias("role", "role")
+				.add(Restrictions.eq("user.email", email)).createAlias("role", "role")
 				.setProjection(Projections.distinct(Projections.property("role.name"))).list());
 		return rolesForUser;
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public Set<String> findAllPermissionsForUser(String username)
+	public Set<String> findAllPermissionsForUser(String email)
 	{
-		Set<String> rolesForUser = findRolesForUser(username);
+		Set<String> rolesForUser = findRolesForUser(email);
 
 		Set<String> permissionsForUser = CollectionFactory.newSet();
 
@@ -575,11 +276,95 @@ public class UserServiceImpl implements UserService
 		permissionsForUser.addAll(crit.list());
 
 		Criteria crit2 = session.createCriteria(UserPermission.class).createAlias("user", "u")
-				.add(Restrictions.eq("u.email", username)).createAlias("permission", "p")
+				.add(Restrictions.eq("u.email", email)).createAlias("permission", "p")
 				.setProjection(Projections.distinct(Projections.property("p.name")));
 
-		System.out.println(crit.list());
 		permissionsForUser.addAll(crit2.list());
 		return permissionsForUser;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public Collection<String> findNonRolePermissionsForUser(String username)
+	{
+		Set<String> rolesForUser = findRolesForUser(username);
+		Set<String> permissionsForUser = CollectionFactory.newSet();
+
+		Criteria crit = session.createCriteria(RolePermission.class).createAlias("role", "r")
+				.add(Restrictions.in("r.name", rolesForUser)).createAlias("permission", "p")
+				.setProjection(Projections.distinct(Projections.property("p.name")));
+
+		permissionsForUser.addAll(crit.list());
+		return CollectionUtils.subtract(findAllPermissions(), permissionsForUser);
+	}
+
+	@Override
+	public boolean userExistWithThatMail(String email, User2 user)
+	{
+		return (Long) session.createCriteria(User2.class).add(Restrictions.eq("email", email))
+				.add(Restrictions.ne("id", user.getId())).setProjection(Projections.rowCount())
+				.uniqueResult() > 0;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public Collection<String> findAllPermissions()
+	{
+		return session.createCriteria(Permission.class)
+				.setProjection(Projections.distinct(Projections.property("name"))).list();
+	}
+
+	@Override
+	public Permission findPermissionByName(String name)
+	{
+
+		return (Permission) session.createCriteria(Permission.class)
+				.add(Restrictions.eq("name", name)).uniqueResult();
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	@SuppressWarnings("unused")
+	private UserInfo getUserInfo()
+	{
+		// in case this method is called before the servlet container has built the session
+		if (asm == null)
+			return null;
+
+		// TODO Bojan
+		// there is exception at start of app when saveSetting has been called
+		try
+		{
+			if (!asm.exists(UserInfo.class))
+				return null;
+		}
+		catch (Exception e)
+		{
+			return null;
+		}
+
+		return asm.get(UserInfo.class);
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	@SuppressWarnings("unused")
+	private String generateSalt()
+	{
+		return randomString(GENERATED_SALT_LENGTH);
+	}
+
+	public static String byteToBase64(byte[] data)
+	{
+		return new String(new Base64().encode(data));
+	}
+
+	public static byte[] base64ToByte(String data)
+	{
+		return new Base64().decode(data.getBytes());
 	}
 }
