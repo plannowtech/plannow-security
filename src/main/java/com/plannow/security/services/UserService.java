@@ -14,6 +14,7 @@ import org.apache.tapestry5.hibernate.annotations.CommitAfter;
 
 import com.plannow.security.entities.Permission;
 import com.plannow.security.entities.Role;
+import com.plannow.security.entities.RolePermission;
 import com.plannow.security.entities.User2;
 import com.plannow.security.entities.UserRole;
 
@@ -173,7 +174,7 @@ public interface UserService
 	 * Returns a {@link Collection collection} of all {@link Permission permissions} with distinct
 	 * projection by permission's {@link Permission name} property.
 	 */
-	Collection<String> findAllPermissions();
+	Collection<String> findAllPermissionsToString();
 
 	/**
 	 * Returns a {@link Permission permission} found by permission's {@link Permission name}.
@@ -183,11 +184,50 @@ public interface UserService
 	Permission findPermissionByName(String name);
 
 	/**
-	 * Return true if {@link User2 user}'s current password is matching with {@link PasswordField
+	 * Returns true if {@link User2 user}'s current password is matching with {@link PasswordField
 	 * newPassword} (password in parameter).
 	 * 
 	 * @param email
 	 * @param password
 	 */
 	boolean checkPassword(User2 user, String password);
+
+	/**
+	 * Returns a {@link List list} of {@link Permission permissions} that {@link Role selectedRole}
+	 * has.
+	 * 
+	 * @param selectedRole
+	 */
+	List<RolePermission> findRolePermissionForSelectedRole(Role selectedRole);
+
+	/**
+	 * Returns a {@link List list] of {@link Permission permissions} that {@link Role selectedRole}
+	 * doesn't has.
+	 * 
+	 * @param selectedRole
+	 */
+	List<Permission> findNoPermissionsForSelectedRole(Role selectedRole);
+
+	/**
+	 * Returns all {@link Permission permissions}.
+	 */
+	List<Permission> findAllPermissions();
+
+	/**
+	 * Returns specific {@link RolePermission rolePermission} for {@link Role selectedRole} with
+	 * {@link Permission permission} in parameter.
+	 * 
+	 * @param selectedRole
+	 * @param permission
+	 */
+	RolePermission findSpecificRolePermissionForSelectedRole(Role selectedRole,
+			Permission permission);
+
+	/**
+	 * Returns a {@link List list} of {@link UserRole userRoles} which contains {@link Role role} in
+	 * param.
+	 * 
+	 * @param role
+	 */
+	List<UserRole> findUserRoleByRole(Role role);
 }

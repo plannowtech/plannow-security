@@ -4,13 +4,19 @@ import java.util.List;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.tapestry5.EventConstants;
+import org.apache.tapestry5.OptionGroupModel;
+import org.apache.tapestry5.OptionModel;
+import org.apache.tapestry5.SelectModel;
 import org.apache.tapestry5.ValueEncoder;
 import org.apache.tapestry5.annotations.OnEvent;
 import org.apache.tapestry5.annotations.Parameter;
 import org.apache.tapestry5.annotations.Property;
 import org.apache.tapestry5.corelib.components.Zone;
+import org.apache.tapestry5.internal.OptionModelImpl;
 import org.apache.tapestry5.ioc.annotations.Inject;
+import org.apache.tapestry5.services.ValueEncoderSource;
 import org.apache.tapestry5.services.ajax.AjaxResponseRenderer;
+import org.apache.tapestry5.util.AbstractSelectModel;
 
 import com.plannow.security.entities.Role;
 import com.plannow.security.entities.User2;
@@ -18,7 +24,7 @@ import com.plannow.security.entities.UserRole;
 import com.plannow.security.services.UserService;
 import com.plannow.security.utils.CollectionFactory;
 
-public class AddRolesAndEditUser
+public class RolesForUser
 {
 	@Parameter(required = true)
 	@Property
@@ -34,6 +40,9 @@ public class AddRolesAndEditUser
 	@Inject
 	private AjaxResponseRenderer ajaxResponseRenderer;
 
+	@Inject
+	private ValueEncoderSource valueEncoderSource;
+
 	private List<Role> checkedListSelectedRolesValues;
 
 	public void setCheckedListSelectedRolesValues(List<Role> checkedListSelectedRolesValues)
@@ -46,25 +55,33 @@ public class AddRolesAndEditUser
 		return userService.findRolesForUser(user);
 	}
 
-	public List<Role> getAllRoles()
-	{
-		return userService.findAllRoles();
+	public SelectModel getAllRoles()
+	{ 
+		return new AbstractSelectModel()
+		{
+			@Override
+			public List<OptionModel> getOptions()
+			{
+				List<OptionModel> options = CollectionFactory.newList();
+				List<Role> roles = userService.findAllRoles();
+				for (Role r : roles)
+				{
+					options.add(new OptionModelImpl(r.getName(), r));
+				}
+				return options;
+			}
+
+			@Override
+			public List<OptionGroupModel> getOptionGroups()
+			{
+				return null;
+			}
+		};
 	}
 
 	public ValueEncoder<Role> getRolesEncoder()
 	{
-		return new ValueEncoder<Role>()
-		{
-			public Role toValue(String clientValue)
-			{
-				return userService.findRoleByName(clientValue);
-			}
-
-			public String toClient(Role value)
-			{
-				return value.getName();
-			}
-		};
+		return valueEncoderSource.getValueEncoder(Role.class);
 	}
 
 	@OnEvent(value = EventConstants.PREPARE, component = "rolesForm")

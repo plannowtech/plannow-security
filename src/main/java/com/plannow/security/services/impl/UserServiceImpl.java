@@ -22,6 +22,7 @@ import org.hibernate.criterion.Projections;
 import org.hibernate.criterion.Restrictions;
 import org.tynamo.security.services.SecurityService;
 
+import com.plannow.security.entities.BaseEntityImpl;
 import com.plannow.security.entities.Permission;
 import com.plannow.security.entities.Role;
 import com.plannow.security.entities.RolePermission;
@@ -115,7 +116,7 @@ public class UserServiceImpl implements UserService
 	@Override
 	public User2 findUserByUsername(String email)
 	{
-		
+
 		System.err.println(session.createCriteria(User2.class).list());
 		return (User2) session.createCriteria(User2.class).add(Restrictions.eq("email", email))
 				.uniqueResult();
@@ -128,14 +129,14 @@ public class UserServiceImpl implements UserService
 	}
 
 	@Override
-    public boolean checkPassword(User2 user, String password)
-    {
-            String passwordHash = user.getPasswordHash();
+	public boolean checkPassword(User2 user, String password)
+	{
+		String passwordHash = user.getPasswordHash();
 
-            String newhash = new Sha1Hash(password, user.getPasswordSalt()).toString();
+		String newhash = new Sha1Hash(password, user.getPasswordSalt()).toString();
 
-            return newhash.equals(passwordHash);
-    }
+		return newhash.equals(passwordHash);
+	}
 
 	/**
 	 * Return random generated {@link String String}, 8 characters length by default.
@@ -295,7 +296,7 @@ public class UserServiceImpl implements UserService
 				.setProjection(Projections.distinct(Projections.property("p.name")));
 
 		permissionsForUser.addAll(crit.list());
-		return CollectionUtils.subtract(findAllPermissions(), permissionsForUser);
+		return CollectionUtils.subtract(findAllPermissionsToString(), permissionsForUser);
 	}
 
 	@Override
@@ -308,7 +309,7 @@ public class UserServiceImpl implements UserService
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public Collection<String> findAllPermissions()
+	public Collection<String> findAllPermissionsToString()
 	{
 		return session.createCriteria(Permission.class)
 				.setProjection(Projections.distinct(Projections.property("name"))).list();
@@ -320,6 +321,52 @@ public class UserServiceImpl implements UserService
 
 		return (Permission) session.createCriteria(Permission.class)
 				.add(Restrictions.eq("name", name)).uniqueResult();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<RolePermission> findRolePermissionForSelectedRole(Role selectedRole)
+	{
+		return session.createCriteria(RolePermission.class)
+				.add(Restrictions.eq("role", selectedRole)).list();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Permission> findAllPermissions()
+	{
+		return session.createCriteria(Permission.class).list();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Permission> findNoPermissionsForSelectedRole(Role selectedRole)
+	{
+		List<Permission> permissionsForSelectedRole = CollectionFactory.newList();
+		List<RolePermission> rolePermissionForSelectedRole = findRolePermissionForSelectedRole(selectedRole);
+		for (RolePermission rolePermission : rolePermissionForSelectedRole)
+		{
+			permissionsForSelectedRole.add(rolePermission.getPermission());
+		}
+
+		return (List<Permission>) CollectionUtils.subtract(findAllPermissions(),
+				permissionsForSelectedRole);
+	}
+
+	@Override
+	public RolePermission findSpecificRolePermissionForSelectedRole(Role selectedRole,
+			Permission permission)
+	{
+		return (RolePermission) session.createCriteria(RolePermission.class)
+				.add(Restrictions.eq("role", selectedRole))
+				.add(Restrictions.eq("permission", permission)).uniqueResult();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<UserRole> findUserRoleByRole(Role role)
+	{
+		return session.createCriteria(UserRole.class).add(Restrictions.eq("role", role)).list();
 	}
 
 	/**

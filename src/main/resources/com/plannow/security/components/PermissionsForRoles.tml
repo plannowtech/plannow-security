@@ -1,0 +1,190 @@
+<t:container
+	xmlns:t="http://tapestry.apache.org/schema/tapestry_5_3.xsd"
+	xmlns:p="tapestry:parameter">
+
+	<t:delegate to="block:createRoleBlock" />
+
+	<t:zone t:id="permissionsForRolesZone" id="permissionsForRolesZone"
+		update="show">
+		<t:delegate to="block:tableRolesBlock" />
+		<t:delegate to="block:selectedRoleHasPermissions" />
+
+		<t:delegate to="block:selectedRoleHasNoPermissions" />
+		<script type="text/javascript">
+			closeAllDialogs();
+		</script>
+	</t:zone>
+
+
+
+
+
+	<t:block t:id="createRoleBlock">
+		<t:pn.linkDialog t:id="createRoleLinkDialog"
+			title="${message:create_role}" class="btn">
+			<p:label>
+			${message:create_role}
+		</p:label>
+			<t:zone t:id="createRoleZone" id="createRoleZone">
+				<t:form t:id="createRoleForm" zone="createRoleZone"
+					clientValidation="NONE">
+					<t:errors />
+					<div class="view-table-row">
+						<t:label for="createRole">${message:name} </t:label>
+						<t:textField value="name" t:id="createRole"
+							placeHolder="message:name" label="message:name"
+							validate="required" />
+					</div>
+					<div class="bottom">
+						<t:submit value="message:save" />
+					</div>
+				</t:form>
+			</t:zone>
+		</t:pn.linkDialog>
+	</t:block>
+
+
+	<t:block t:id="tableRolesBlock">
+		<div class="floatLeft">
+			<table class="rolesTable marginRight">
+				<thead>
+					<tr>
+						<th>#</th>
+						<th>${message:roles}</th>
+						<th>${message:delete}</th>
+						<th>${message:edit}</th>
+					</tr>
+				</thead>
+				<tbody>
+					<t:loop source="roles" value="role" index="indexNo">
+						<tr class="${roleClass}">
+							<td class="textAlignCenter">${indexNo}</td>
+							<td><t:eventLink t:id="permissionsForRoles"
+									event="permissionsForRoles" context="role"
+									zone="permissionsForRolesZone">${role.name}</t:eventLink>
+							</td>
+							<td><t:pn.linkDialog t:id="removeRole"
+									title="${message:remove_role}" context="role">
+									<p:label>
+										<img src="${removeRoleIcon}" title="${message:remove_role}" />
+									</p:label>
+									<div class="t-error">
+										<div class="t-message">
+											<t:outputRaw value="${warningMessage}" />
+										</div>
+									</div>
+									<div class="bottom">
+										<t:eventLink class="btn" t:id="removeYes" event="removeRole"
+											context="role" zone="permissionsForRolesZone">
+									${message:yes}
+									</t:eventLink>
+										<a class="input btn" onclick="closeAllDialogs();" href="#">${message:no}</a>
+									</div>
+								</t:pn.linkDialog></td>
+							<td><t:delegate to="block:editRoleBlock" /></td>
+						</tr>
+					</t:loop>
+				</tbody>
+			</table>
+		</div>
+	</t:block>
+
+	<t:block t:id="selectedRoleHasPermissions">
+		<div class="floatLeft">
+			<table class="rolesTable margin">
+				<thead>
+					<tr>
+						<th>#</th>
+						<th>${message:active}</th>
+						<th>${selectedRole.name} ${message:role_has_permissions}</th>
+					</tr>
+				</thead>
+				<tbody>
+					<t:loop source="selectedRoleHasPermissions"
+						value="selectedRoleHasPermission" index="indexNo">
+						<tr>
+							<td class="textAlignCenter">${indexNo}</td>
+							<td>
+								<div class="lockUnlockIcon">
+									<t:zone t:id="lockUnlockRolePermissionZone" id="${zoneId}"
+										update="show">
+										<t:eventLink event="lockUnlockRolePermission"
+											context="[selectedRoleHasPermission, selectedRole]"
+											zone="${zoneId}">
+											<img src="${getLockedValue(selectedRoleHasPermission)}"
+												class="linkopacity" width="13px"></img>
+										</t:eventLink>
+									</t:zone>
+								</div></td>
+							<td class="hasRole"><t:eventLink
+									t:id="removePermissionForSelectedRole"
+									event="removePermissionForSelectedRole"
+									zone="permissionsForRolesZone"
+									context="[selectedRole, selectedRoleHasPermission]">${selectedRoleHasPermission.name}
+										<img src="${addPermissonIcon}"
+										title="${message:add_permission}"
+										class="removePermissionIconSize linkopacity" />
+								</t:eventLink></td>
+						</tr>
+					</t:loop>
+				</tbody>
+			</table>
+		</div>
+	</t:block>
+
+	<t:block t:id="selectedRoleHasNoPermissions">
+		<div class="floatLeft">
+			<table class="rolesTable textAlignRight">
+				<thead>
+					<tr>
+						<th>${selectedRole.name} ${message:role_has_no_permissions}</th>
+						<th>#</th>
+					</tr>
+				</thead>
+				<tbody>
+					<t:loop source="selectedRoleHasNoPermissions"
+						value="selectedRoleHasNoPermission" index="indexNo">
+						<tr>
+							<td class="hasNoRole"><t:eventLink
+									t:id="addPermissionForSelectedRole"
+									event="addPermissionForSelectedRole"
+									zone="permissionsForRolesZone"
+									context="[selectedRole, selectedRoleHasNoPermission]">
+									<img src="${removePermissonIcon}"
+										title="${message:remove_permission}"
+										class="addPermissionIconSize" />${selectedRoleHasNoPermission.name}
+									</t:eventLink>
+							</td>
+							<td class="textAlignCenter">${indexNo}</td>
+						</tr>
+					</t:loop>
+				</tbody>
+			</table>
+		</div>
+	</t:block>
+
+
+	<t:block t:id="editRoleBlock">
+		<t:pn.linkDialog t:id="editRoleLinkDialog"
+			title="${message:edit_role}" context="role">
+			<p:label>
+				<img src="${editRoleIcon}" title="${message:edit_role}" />
+			</p:label>
+			<t:zone t:id="editRoleZone" id="editRoleZone">
+				<t:form t:id="editRoleForm" zone="editRoleZone"
+					clientValidation="NONE" context="role">
+					<t:errors />
+					<div class="view-table-row">
+						<t:label for="editRole">${message:name} </t:label>
+						<t:textField value="role?.name" t:id="editRole"
+							placeHolder="message:name" label="message:name"
+							validate="required" />
+					</div>
+					<div class="bottom">
+						<t:submit value="message:save" />
+					</div>
+				</t:form>
+			</t:zone>
+		</t:pn.linkDialog>
+	</t:block>
+</t:container>
